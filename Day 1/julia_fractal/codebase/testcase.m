@@ -19,11 +19,11 @@ known_answer=c(1:ntMax+1);
 
 % then we can compare the output of the program at these parameters
 
-[~,zTrajectory]=followz(0+1i,0-1i);
+[zTrajectory,~]=follow_z(0+1i,0-1i);
 disp('Output is')
 disp(zTrajectory')
 
-% to the known correct output as a test
+% to threct output as a test
 if isequal(zTrajectory,known_answer)
     disp('test passed!')
 else
