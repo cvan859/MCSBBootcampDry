@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ##First things first: Gather materials!
@@ -45,10 +45,10 @@ To explore this interplay, we will end this module with a project where we look 
 ####NOTE: You will need to change the file path based on where you saved these files.
 
 #extract metadata (information about each cell, e.g. cluster assignment)
-cell_metadata <- read.table("/Users/kerriganblake/Desktop/Misc/R_Markdown_Bootcamp_2018/cell_metadata.txt")
+cell_metadata <- read.table("C:/bootcamp_dry/MCSBBootCampDry/Zoo/R/cell_metadata.txt")
 
 #extract the normalized data matrix
-expression_matrix <- readRDS("/Users/kerriganblake/Desktop/Misc/R_Markdown_Bootcamp_2018/expression_matrix.rds")
+expression_matrix <- readRDS("C:/bootcamp_dry/MCSBBootCampDry/Zoo/R/expression_matrix.rds")
 ```
 
 ##Data Investigation
@@ -80,7 +80,7 @@ table(cell_metadata$orig.ident, cell_metadata$res.0.4)
 #first item is the dataframe (a type of R object containing a mix of numbers, characters and factors) that has the data you want to plot
 #next, you give a mapping, where x=column name of data you want to plot on the x-axis, etc with fill generating a different color for each factor you plot
 #finally, you tell ggplot the type of plot you want to render (for example, geom_point() would make a dot plot)
-ggplot(cell_metadata, mapping=aes(x=orig.ident, y=nGene, fill=orig.ident)) + geom_violin()
+ggplot(cell_metadata, mapping=aes(x=orig.ident, y=nGene, fill=orig.ident)) + geom_violin() + geom_jitter()
 ```
 
 ###Question 4a: What are the most commonly expressed genes in the dataset? (i.e. Which gene or set of genes is expressed in the largest number of cells)?
@@ -130,7 +130,7 @@ MKI67_expression <- MKI67_expression[rownames(cell_metadata),]
 #Step 3: Once we are sure that our dataset are in the same order, we can add a column of MKI67 expresison to our cell metadata taking advantage of the $ operator for column references.
 cell_metadata$MKI67_expression <- MKI67_expression
 
-#Step 4: Finally, we can compute the correlation 
+#Step 4: Finally, we can compute the Pearson correlation (p-value is cor.test) 
 correlation_mki67 <- cor(cell_metadata$G2M.Score, cell_metadata$MKI67_expression)
 #0.7382222
 ```
@@ -151,9 +151,11 @@ correlation_mki67_WT <- cor(WT_subset$G2M.Score, WT_subset$MKI67_expression)
 In this question, we will introduce the incredibly useful package dplyr. This package allows us to group data and summarize columns with a fairly intuitive syntax.
 ```{r q7}
 #first, we list the data frame we need to work from, in this case, cell_metadata
-#%>% syntax will take the data output from the previous step and perform the task listed after the arrow on that data
+#specific to dplyr: %>% syntax will take the data output from the previous step and perform the task listed after the arrow on that data 
+#(see Linux pipes concept) don't need to save intermediate files
 #we group our data frame first by the cluster, and next by condition
 #finally, we summarize our data for each group by taking the average of MKI67
+#It's basically a better Pivot Table
 average_mki67_by_cluster_and_condition <- cell_metadata %>% 
   group_by(res.0.4, orig.ident) %>% 
   summarise(mean_mki67 = mean(MKI67_expression))
@@ -162,6 +164,7 @@ average_mki67_by_cluster_and_condition <- cell_metadata %>%
 ###Question 8: Show the average MKI67 expression using a barplot grouped by cluster and colored by condition
 ```{r q8}
 ggplot(average_mki67_by_cluster_and_condition, mapping = aes(x=res.0.4, y=mean_mki67, fill=orig.ident)) + geom_bar(stat="identity", position="dodge")
+# without position='dodge', ggplot will do a stacked bar graph
 ```
 
 ###Question 9: Repeat questions 7 & 8, but this time, only compute the average expression for cells that *actually* express MKI67.
@@ -192,7 +195,7 @@ genes_of_interest <- c("KRT14","KRT18","ANKRD30A","SLPI","GAPDH")
 genes_of_interest_df <- expression_matrix[genes_of_interest,rownames(cell_metadata)]
 matrix_subset_of_interest <- as.matrix(t(genes_of_interest_df))
 
-#since we have multiple columns to add to the metadata, we will want to 
+#since we have multiple columns to add to the metadata, we will want to ('c() makes everything into a vector)
 genes_of_interest_with_necessary_metadata <- merge(cell_metadata[,c("res.0.4","orig.ident")], as.data.frame(matrix_subset_of_interest), by="row.names")
 
 rownames(genes_of_interest_with_necessary_metadata) <- genes_of_interest_with_necessary_metadata$Row.names
@@ -207,6 +210,7 @@ genes_melt <- genes_of_interest_with_necessary_metadata %>%
 colnames(genes_melt) <- c("cluster","condition","gene","expression")
 
 ggplot(genes_melt, mapping = aes(x=gene, y=expression, fill=factor(condition))) + geom_bar(stat="identity",position="dodge") + facet_grid(.~cluster) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+#can run each piece before the plus to see sequential commands
 ```
 
 ###Question 11: Generate a heatmap and annotate the clusters/condition for each cell in this heatmap. 
@@ -216,12 +220,13 @@ genes_of_interest <- c("KRT14","KRT18","ANKRD30A","SLPI","GAPDH")
 pheatmap(expression_matrix[genes_of_interest,],
          annotation_col= cell_metadata[,c("res.0.4","orig.ident")],
          show_colnames = FALSE)
+#annotation_col adds clusters by orig.ident and res.0.4 (see top two rows in heatmap)
 ```
 
 ##Project: Given the following list of cell cycle genes, perform as many tasks as you can in the remaining time. 
 
 ```{r cell cycle genes}
-cell_cycle_genes <- as.character(read.table("/Users/kerriganblake/Desktop/Misc/R_Markdown_Bootcamp_2018/regev_lab_cell_cycle_genes.txt", header=F)$V1)
+cell_cycle_genes <- as.character(read.table("C:/bootcamp_dry/MCSBBootcampDry/Zoo/R/regev_lab_cell_cycle_genes.txt", header=F)$V1)
 ```
 
 ###Task 1: Reduce the cell_cycle_genes to only those that are present and expressed in at least 500 cells. 
