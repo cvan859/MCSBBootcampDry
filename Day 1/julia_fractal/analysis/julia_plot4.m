@@ -17,8 +17,8 @@ f1=figure(1); clf; hold on; box on;
 plot(real(p(juliaSet)), imag(p(juliaSet)), '.k');
 
 % plot coloring according to exit number
-figure(2); clf; hold on; box on;
+f2=figure(2); clf; hold on; box on;
 scatter(real(p(juliaSet)), imag(p(juliaSet)), 10, nmaxlist(juliaSet));
 colormap(cool);
 
-saveas(f1,'julia4.png')
+saveas(f2,'julia4.png')
